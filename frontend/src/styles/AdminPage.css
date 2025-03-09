@@ -1,0 +1,251 @@
+/* AdminPage.css */
+
+/* Table Styling */
+.table-fixed {
+  table-layout: fixed;
+}
+
+.table-fixed th,
+.table-fixed td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Button Spacing */
+.btn-action-group {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.btn-action-group .btn {
+  margin-right: 5px;
+  margin-bottom: 5px;
+}
+
+/* Pagination Styling */
+.pagination {
+  justify-content: center;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.pagination .page-link {
+  color: #007bff;
+}
+
+.pagination .page-link:hover {
+  background-color: #e9ecef;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .table-fixed th,
+  .table-fixed td {
+    font-size: 14px;
+  }
+
+  .table-fixed th:last-child,
+  .table-fixed td:last-child {
+    white-space: normal;
+  }
+
+  .btn-action-group {
+    flex-direction: column;
+  }
+
+  .btn-action-group .btn {
+    width: 100%;
+    margin-right: 0;
+  }
+}
+
+.admin-page-container {
+  padding: 1.5rem;
+  min-height: calc(100vh - 200px);
+}
+
+.admin-page-container.dark {
+  background-color: #212529;
+  color: #f8f9fa;
+}
+
+.filter-card {
+  margin-bottom: 1.5rem;
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.dark .filter-card {
+  background-color: #343a40;
+  color: #f8f9fa;
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+.stat-card {
+  text-align: center;
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  transition: all 0.3s ease;
+  height: 100%;
+  border-radius: 0.5rem;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.dark .stat-card {
+  background-color: #343a40;
+  color: #f8f9fa;
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+.card-title {
+  font-size: 1rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+.dark .card-title {
+  color: #adb5bd;
+}
+
+.card-value {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0;
+}
+
+/* Table styles */
+.table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.05rem;
+}
+
+.dark-modal .modal-content {
+  background-color: #343a40;
+  color: #f8f9fa;
+}
+
+.dark-modal .close {
+  color: #f8f9fa;
+}
+
+/* Status badges */
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 50rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-active {
+  background-color: rgba(40, 167, 69, 0.2);
+  color: #28a745;
+}
+
+.status-inactive {
+  background-color: rgba(108, 117, 125, 0.2);
+  color: #6c757d;
+}
+
+.status-maintenance {
+  background-color: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+
+.dark .status-active {
+  background-color: rgba(40, 167, 69, 0.3);
+  color: #5dd879;
+}
+
+.dark .status-inactive {
+  background-color: rgba(108, 117, 125, 0.3);
+  color: #adb5bd;
+}
+
+.dark .status-maintenance {
+  background-color: rgba(255, 193, 7, 0.3);
+  color: #ffda6a;
+}
+
+.password-strength {
+  margin-top: 0.5rem;
+}
+
+.strength-text {
+  font-size: 0.875rem;
+  color: #888;
+  margin-bottom: 0.25rem;
+}
+
+.strength-meter {
+  height: 4px;
+  background-color: #eee;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.strength-meter-fill {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* Tablet and up */
+@media (min-width: 768px) {
+  .admin-page-container {
+    padding: 2rem;
+  }
+}
+
+/* Desktop and up */
+@media (min-width: 992px) {
+  .admin-page-container {
+    padding: 2.5rem;
+  }
+}
+
+/* New record highlighting */
+.new-record {
+  animation: highlight-new-row 5s ease-out;
+}
+
+@keyframes highlight-new-row {
+  0% {
+    background-color: rgba(40, 167, 69, 0.3);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.new-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: white;
+  background-color: #28a745;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}

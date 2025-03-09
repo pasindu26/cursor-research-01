@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: backend-water360
+data:
+  MYSQL_HOST: "52.91.8.171"  # MySQL Private IP with Port
+  MYSQL_DB: "test"
+  FLASK_ENV: "development"
+  SECRET_KEY: "kusal123"
+  FRONTEND_URL: "http://3.81.220.169:30080"
+  CORS_ORIGIN: "http://3.81.220.169:30080"

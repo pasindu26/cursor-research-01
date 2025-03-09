@@ -1,0 +1,30 @@
+/* Light Theme (Default) */
+:root {
+  --bg-color: rgb(248 249 250);
+  --text-color: #000000;
+  --link-color: #007bff;
+}
+
+/* Dark Theme */
+html[data-theme='dark'] {
+  --bg-color: rgb(33 37 41);
+  --text-color: #ffffff;
+  --link-color: #90caf9;
+}
+
+/* Global Styles */
+body {
+  background-color: var(--bg-color) !important; /* Add !important for higher specificity */
+  color: var(--text-color) !important;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+a {
+  color: var(--link-color);
+}
+
+a:hover {
+  text-decoration: underline;
+}

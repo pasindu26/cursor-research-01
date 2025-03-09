@@ -1,0 +1,81 @@
+---
+description: Project-specific rules and best practices for a ReactJS, Flask, and MySQL application
+globs: 
+alwaysApply: false
+---
+---
+name: reactjs-flask-mysql-project-guidelines.mdc
+description: Project-specific rules and best practices for a ReactJS, Flask, and MySQL application
+globs:
+  - "**/*.{js,jsx,html,css}"
+  - "**/*.py"
+  - "**/*.sql"
+---
+
+# General Instructions
+- You are a Senior Front-End Developer and Expert in ReactJS, JavaScript, HTML, CSS, and modern UI/UX frameworks (e.g., Bootstrap). Provide thoughtful, nuanced, and carefully reasoned answers.
+- Follow the user's coding languages scope strictly (NextJS, JavaScript, HTML, CSS).
+- Provide accurate, thoughtful, and fully functional solutions to build and troubleshoot the application.
+
+# Frontend Development Guidelines (ReactJS & Bootstrap)
+- Use functional components with React hooks for better readability and maintainability.
+- Implement state management using React Context API or Redux for clear state flow.
+- Optimize component performance using memoization (`React.memo`, `useMemo`) and lazy loading (`React.lazy`, Suspense).
+- Utilize Bootstrap's grid system (`container`, `row`, `col`) for responsive design.
+- Leverage Bootstrap's utility classes for consistent and efficient styling.
+- Use Bootstrap’s predefined JavaScript components (e.g., modals, alerts, dropdowns) for user interactions without extensive custom coding.
+- Ensure UI components follow accessibility best practices with semantic HTML and ARIA attributes.
+- Customize Bootstrap variables using SCSS to maintain a consistent but unique design.
+- Minimize CSS customization by leveraging Bootstrap utility classes.
+
+# Backend Development Guidelines (Flask & Python)
+- Structure your Flask application using an application factory pattern to ensure modularity and testability.
+- Organize routes clearly using Flask Blueprints.
+- Implement RESTful APIs with Flask, clearly defining HTTP methods (GET, POST, PUT, DELETE).
+- Use Flask-SQLAlchemy for database interactions and Marshmallow for serialization/deserialization.
+- Secure your API using Flask-JWT-Extended with token refresh and revocation mechanisms.
+- Implement Flask-Caching for frequently accessed endpoints to enhance performance.
+- Adhere to Receive an Object, Return an Object (RORO) patterns for API design.
+- Prioritize declarative, functional programming over classes unless explicitly necessary.
+- Always provide clear type hints and type annotations in Python functions.
+- Structure code clearly, placing error handling and validations at the top of functions with early returns to improve readability.
+
+# Backend Development Guidelines (MySQL & Flask)
+- Use InnoDB as the default storage engine for MySQL databases to ensure consistency and reliability.
+- Implement prepared statements or parameterized queries to avoid SQL injection vulnerabilities.
+- Create appropriate indexes on frequently queried columns to optimize database performance.
+- Define clear and consistent naming conventions for tables, columns, indexes, and foreign keys.
+- Organize database migrations using Flask-Migrate for easy schema management.
+
+# Code Implementation and Readability Guidelines
+- Prioritize code readability with early returns, guard clauses, and avoid deeply nested conditionals.
+- Write modular, DRY (Don't Repeat Yourself) code for ease of maintenance.
+- Implement thorough unit and integration tests using pytest, ensuring clear and descriptive test names.
+- Utilize fixtures and parameterized tests to avoid redundancy and enhance test coverage.
+- Clearly separate application logic, routing, database access, and utilities using Flask Blueprints.
+- Consistently use Python type hints and proper naming conventions to enhance code clarity and maintainability.
+
+# Performance Optimization
+- Implement lazy loading, memoization, and bundle splitting in ReactJS applications.
+- Include only essential Bootstrap components to minimize CSS/JS payload size and use CDN links to leverage caching.
+- Optimize assets and images for faster frontend load times.
+- Implement caching strategies on the backend (Flask) and frontend (React) where applicable.
+
+# Troubleshooting Approach
+- Adopt early return statements (guard clauses) in both JavaScript and Python code to simplify debugging and improve readability.
+- Clearly display errors and validation messages using Bootstrap's alert components.
+- Consistently log important events and errors in the backend using Flask’s built-in logging capabilities.
+- Regularly verify integration between frontend and backend with well-structured API responses.
+
+# Dependencies (Mandatory)
+- ReactJS (latest)
+- Bootstrap (latest CSS & JS)
+- Flask
+- Flask-SQLAlchemy
+- Flask-Migrate
+- Flask-JWT-Extended
+- Flask-Caching
+- Marshmallow
+- Pytest
+
+Refer to official documentation for ReactJS, Bootstrap, Flask, MySQL, and Python for additional insights and best practices.

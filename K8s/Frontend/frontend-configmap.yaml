@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: frontend-water360
+data:
+  REACT_APP_BACKEND_URL: "http://3.81.220.169:30050" # Backend server IP

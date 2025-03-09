@@ -1,0 +1,79 @@
+.auth-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+.auth-card {
+    background-color: #2a2a2a;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.auth-card .card-body {
+    padding: 2rem;
+}
+
+.form-label {
+    color: #e0e0e0;
+    font-weight: 500;
+}
+
+.form-control {
+    background-color: #3a3a3a;
+    border: 1px solid #4a4a4a;
+    color: #ffffff;
+    padding: 0.75rem 1rem;
+}
+
+.form-control:focus {
+    background-color: #3a3a3a;
+    border-color: #0d6efd;
+    color: #ffffff;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.form-control::placeholder {
+    color: #888888;
+}
+
+.password-strength {
+    margin-top: 0.5rem;
+}
+
+.strength-text {
+    font-size: 0.875rem;
+    color: #888888;
+    margin-bottom: 0.25rem;
+}
+
+.strength-meter {
+    height: 4px;
+    background-color: #4a4a4a;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.strength-meter-fill {
+    height: 100%;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.btn-primary {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+}
+
+.text-muted {
+    color: #888888 !important;
+}
+
+a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+} 

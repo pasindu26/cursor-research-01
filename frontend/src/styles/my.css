@@ -1,0 +1,9 @@
+/* Adjust this value to add space between the edge and the whole navbar */
+.navbar-custom {
+  padding-left: 20px; 
+}
+
+
+.brand-custom {
+  padding-left: 20px; /* Adjust this value to add space between the edge and the brand name */
+}

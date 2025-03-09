@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: water360-backend
+  labels:
+    app: water360
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: water360
+      tier: backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: water360
+        tier: backend
+    spec:
+      containers:
+      - name: water360-backend
+        image: water360/backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+        env:
+        - name: FLASK_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: water360-config
+              key: FLASK_ENV
+        - name: MYSQL_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: water360-config
+              key: MYSQL_HOST
+        - name: MYSQL_DB
+          valueFrom:
+            configMapKeyRef:
+              name: water360-config
+              key: MYSQL_DB
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: water360-secrets
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: water360-secrets
+              key: MYSQL_PASSWORD
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: water360-secrets
+              key: JWT_SECRET_KEY
+        - name: FRONTEND_URL
+          valueFrom:
+            configMapKeyRef:
+              name: water360-config
+              key: FRONTEND_URL
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5 

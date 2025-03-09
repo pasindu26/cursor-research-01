@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: backend-water360
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: jonemark226/backend-water360:02
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - configMapRef:
+            name: backend-config
+        - secretRef:
+            name: mysql-secret
+        resources:
+          requests:
+            cpu: "250m"      # Request 250 millicores (0.25 CPU)
+            memory: "256Mi"  # Request 256MB of memory
+          limits:
+            cpu: "500m"      # Limit to 500 millicores (0.5 CPU)
+            memory: "512Mi"

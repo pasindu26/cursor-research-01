@@ -1,0 +1,68 @@
+/* Footer Styles */
+.footer {
+  background-color: #e3f2fd; /* Light blue background */
+  padding: 20px 0;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for better design */
+}
+
+/* Footer Container */
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+/* Social Media Section */
+.footer-social {
+  margin-bottom: 15px;
+}
+
+.footer-social a {
+  color: #1976d2; /* Darker blue for social media icons */
+  font-size: 24px; /* Icon size */
+  margin: 0 10px;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer-social a:hover {
+  color: #0d47a1; /* Even darker blue on hover */
+}
+
+/* Footer Links */
+.footer-links {
+  margin: 10px 0 20px;
+}
+
+.footer-links a {
+  color: #1976d2; /* Dark blue for links */
+  font-size: 16px; /* Slightly larger text */
+  margin: 0 15px;
+  text-decoration: none;
+  font-weight: bold; /* Bold links */
+  transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+  color: #0d47a1; /* Darker blue on hover */
+  text-decoration: underline;
+}
+
+/* Footer Text */
+.footer-text {
+  font-size: 14px;
+  color: #555; /* Neutral gray for text */
+  margin-top: 10px;
+}
+
+.footer-link {
+  color: #1976d2;
+  text-decoration: none;
+}
+
+.footer-link:hover {
+  text-decoration: underline;
+  color: #0d47a1; /* Darker blue for link hover */
+}

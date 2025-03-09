@@ -1,0 +1,18 @@
+[Unit]
+Description=Water360 Backend API Service
+After=network.target mysql.service
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/project/research-script/research/backend
+ExecStart=/home/ubuntu/project/research-script/research/backend/start.sh
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=water360-backend
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target 
