@@ -27,7 +27,12 @@ import apiService from '../../../utils/api';
 ChartJS.register(LinearScale, PointElement, Tooltip, Legend);
 
 function HomePage() {
-  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardData, setDashboardData] = useState({
+    total_readings_24h: 0,
+    highest_ph: { value: 0, location: '', timestamp: '' },
+    highest_temp: { value: 0, location: '', timestamp: '' },
+    highest_turbidity: { value: 0, location: '', timestamp: '' }
+  });
   const [recentData, setRecentData] = useState([]);
   const [correlationData, setCorrelationData] = useState(null);
   const [loading, setLoading] = useState({
@@ -55,7 +60,28 @@ function HomePage() {
       const response = await apiService.data.getSummaryInsights();
       
       if (response.data && response.data.status === 'success') {
-        setDashboardData(response.data);
+        // Extract the data we need
+        const data = response.data;
+        
+        setDashboardData({
+          total_readings_24h: data.total_readings_24h || 0,
+          highest_ph: {
+            value: data.highest_ph?.value || 0,
+            location: data.highest_ph?.location || 'N/A',
+            timestamp: data.highest_ph?.timestamp || 'N/A'
+          },
+          highest_temp: {
+            value: data.highest_temp?.value || 0,
+            location: data.highest_temp?.location || 'N/A',
+            timestamp: data.highest_temp?.timestamp || 'N/A'
+          },
+          highest_turbidity: {
+            value: data.highest_turbidity?.value || 0,
+            location: data.highest_turbidity?.location || 'N/A',
+            timestamp: data.highest_turbidity?.timestamp || 'N/A'
+          }
+        });
+        
         setSuccess('Dashboard data loaded successfully');
         setTimeout(() => setSuccess(''), 3000);
       } else {
@@ -70,10 +96,10 @@ function HomePage() {
       
       // Set fallback data
       setDashboardData({
-        total_readings: 125,
-        avg_ph: 7.2,
-        avg_temp: 22.5,
-        avg_turbidity: 15.3
+        total_readings_24h: 125,
+        highest_ph: { value: 8.5, location: 'uk', timestamp: moment().subtract(2, 'hours').format('YYYY-MM-DD HH:mm:ss') },
+        highest_temp: { value: 28.3, location: 'us', timestamp: moment().subtract(5, 'hours').format('YYYY-MM-DD HH:mm:ss') },
+        highest_turbidity: { value: 22.7, location: 'eu', timestamp: moment().subtract(8, 'hours').format('YYYY-MM-DD HH:mm:ss') }
       });
     } finally {
       setLoading(prev => ({ ...prev, dashboard: false }));
@@ -110,6 +136,9 @@ function HomePage() {
         setLocations(uniqueLocations.length > 0 ? uniqueLocations : ['uk', 'us', 'eu']);
         
         setRecentData(processedData);
+        
+        // Also fetch all locations from the database for the dropdown
+        fetchAllLocations();
       } else {
         throw new Error('Failed to fetch recent data');
       }
@@ -124,7 +153,9 @@ function HomePage() {
       const sampleData = [
         { id: 1, location: 'uk', ph_value: 7.2, temperature: 22.5, turbidity: 15.3, date: '2025-03-08', time: '12:30:00', timestamp: '2025-03-08 12:30:00', _timestampNum: Date.now() },
         { id: 2, location: 'us', ph_value: 6.8, temperature: 24.1, turbidity: 12.7, date: '2025-03-08', time: '11:45:00', timestamp: '2025-03-08 11:45:00', _timestampNum: Date.now() - 3600000 },
-        { id: 3, location: 'eu', ph_value: 7.5, temperature: 21.3, turbidity: 14.2, date: '2025-03-08', time: '10:15:00', timestamp: '2025-03-08 10:15:00', _timestampNum: Date.now() - 7200000 }
+        { id: 3, location: 'eu', ph_value: 7.5, temperature: 21.3, turbidity: 14.2, date: '2025-03-08', time: '10:15:00', timestamp: '2025-03-08 10:15:00', _timestampNum: Date.now() - 7200000 },
+        { id: 4, location: 'uk', ph_value: 7.1, temperature: 23.0, turbidity: 13.8, date: '2025-03-08', time: '09:30:00', timestamp: '2025-03-08 09:30:00', _timestampNum: Date.now() - 10800000 },
+        { id: 5, location: 'us', ph_value: 7.3, temperature: 22.8, turbidity: 14.5, date: '2025-03-08', time: '08:45:00', timestamp: '2025-03-08 08:45:00', _timestampNum: Date.now() - 14400000 }
       ];
       
       setRecentData(sampleData);
@@ -134,6 +165,24 @@ function HomePage() {
       setLocations(uniqueLocations);
     } finally {
       setLoading(prev => ({ ...prev, recent: false }));
+    }
+  }, []);
+
+  // Fetch all unique locations from the database
+  const fetchAllLocations = useCallback(async () => {
+    try {
+      const response = await apiService.data.getAllData();
+      
+      if (response.data && response.data.status === 'success') {
+        // Extract unique locations from all data
+        const allLocations = [...new Set(response.data.data.map(item => item.location))];
+        if (allLocations.length > 0) {
+          setLocations(allLocations);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching all locations:', error);
+      // We already have fallback locations from fetchRecentData, so no need to set them again
     }
   }, []);
 
@@ -300,9 +349,15 @@ function HomePage() {
     }
   };
 
+  // Format timestamp for display
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp || timestamp === 'N/A') return 'N/A';
+    return moment(timestamp).format('MMM DD, YYYY HH:mm');
+  };
+
   return (
     <Container fluid className={`py-4 ${theme === 'dark' ? 'bg-dark text-light' : 'bg-light text-dark'}`}>
-      <motion.div
+    <motion.div
         initial="hidden"
         animate="visible"
         variants={containerVariants}
@@ -321,7 +376,7 @@ function HomePage() {
           </Alert>
         )}
         
-        {/* Dashboard Stats */}
+        {/* Dashboard Stats - Last 24 Hours */}
         <Row className="mb-4">
           {loading.dashboard ? (
             <Col className="text-center py-5">
@@ -329,14 +384,17 @@ function HomePage() {
                 <span className="visually-hidden">Loading...</span>
               </Spinner>
             </Col>
-          ) : dashboardData ? (
-            <>
+      ) : (
+        <>
               <Col md={3} sm={6} className="mb-3">
                 <motion.div variants={itemVariants}>
                   <Card className={`h-100 ${theme === 'dark' ? 'bg-dark text-light border-secondary' : ''}`}>
                     <Card.Body className="d-flex flex-column align-items-center justify-content-center">
-                      <Card.Title className="text-center">Total Readings</Card.Title>
-                      <Card.Text className="display-4 text-center">{dashboardData.total_readings || 0}</Card.Text>
+                      <div className="d-flex align-items-center mb-2">
+                        <i className="bi bi-graph-up-arrow me-2 text-primary" style={{ fontSize: '1.5rem' }}></i>
+                        <Card.Title className="text-center mb-0">Total Readings (24h)</Card.Title>
+                      </div>
+                      <Card.Text className="display-4 text-center">{dashboardData.total_readings_24h}</Card.Text>
                       {error.dashboard && <small className="text-warning mt-2">* {error.dashboard}</small>}
                     </Card.Body>
                   </Card>
@@ -346,8 +404,33 @@ function HomePage() {
                 <motion.div variants={itemVariants}>
                   <Card className={`h-100 ${theme === 'dark' ? 'bg-dark text-light border-secondary' : ''}`}>
                     <Card.Body className="d-flex flex-column align-items-center justify-content-center">
-                      <Card.Title className="text-center">Average pH</Card.Title>
-                      <Card.Text className="display-4 text-center">{dashboardData.avg_ph ? dashboardData.avg_ph.toFixed(2) : 'N/A'}</Card.Text>
+                      <div className="d-flex align-items-center mb-2">
+                        <i className="bi bi-water me-2 text-info" style={{ fontSize: '1.5rem' }}></i>
+                        <Card.Title className="text-center mb-0">Highest pH Value</Card.Title>
+                      </div>
+                      <Card.Text className="display-4 text-center">{dashboardData.highest_ph.value.toFixed(2)}</Card.Text>
+                      <small className="text-muted">
+                        Location: {dashboardData.highest_ph.location}<br />
+                        Time: {formatTimestamp(dashboardData.highest_ph.timestamp)}
+                      </small>
+                      {error.dashboard && <small className="text-warning mt-2">* {error.dashboard}</small>}
+                        </Card.Body>
+                      </Card>
+                    </motion.div>
+                  </Col>
+              <Col md={3} sm={6} className="mb-3">
+                <motion.div variants={itemVariants}>
+                  <Card className={`h-100 ${theme === 'dark' ? 'bg-dark text-light border-secondary' : ''}`}>
+                    <Card.Body className="d-flex flex-column align-items-center justify-content-center">
+                      <div className="d-flex align-items-center mb-2">
+                        <i className="bi bi-thermometer-half me-2 text-danger" style={{ fontSize: '1.5rem' }}></i>
+                        <Card.Title className="text-center mb-0">Highest Temperature</Card.Title>
+          </div>
+                      <Card.Text className="display-4 text-center">{dashboardData.highest_temp.value.toFixed(1)}°C</Card.Text>
+                      <small className="text-muted">
+                        Location: {dashboardData.highest_temp.location}<br />
+                        Time: {formatTimestamp(dashboardData.highest_temp.timestamp)}
+                      </small>
                       {error.dashboard && <small className="text-warning mt-2">* {error.dashboard}</small>}
                     </Card.Body>
                   </Card>
@@ -357,41 +440,36 @@ function HomePage() {
                 <motion.div variants={itemVariants}>
                   <Card className={`h-100 ${theme === 'dark' ? 'bg-dark text-light border-secondary' : ''}`}>
                     <Card.Body className="d-flex flex-column align-items-center justify-content-center">
-                      <Card.Title className="text-center">Average Temperature</Card.Title>
-                      <Card.Text className="display-4 text-center">{dashboardData.avg_temp ? dashboardData.avg_temp.toFixed(2) : 'N/A'}°C</Card.Text>
+                      <div className="d-flex align-items-center mb-2">
+                        <i className="bi bi-droplet-half me-2 text-warning" style={{ fontSize: '1.5rem' }}></i>
+                        <Card.Title className="text-center mb-0">Highest Turbidity</Card.Title>
+              </div>
+                      <Card.Text className="display-4 text-center">{dashboardData.highest_turbidity.value.toFixed(1)}</Card.Text>
+                      <small className="text-muted">
+                        Location: {dashboardData.highest_turbidity.location}<br />
+                        Time: {formatTimestamp(dashboardData.highest_turbidity.timestamp)}
+                      </small>
                       {error.dashboard && <small className="text-warning mt-2">* {error.dashboard}</small>}
                     </Card.Body>
                   </Card>
                 </motion.div>
-              </Col>
-              <Col md={3} sm={6} className="mb-3">
-                <motion.div variants={itemVariants}>
-                  <Card className={`h-100 ${theme === 'dark' ? 'bg-dark text-light border-secondary' : ''}`}>
-                    <Card.Body className="d-flex flex-column align-items-center justify-content-center">
-                      <Card.Title className="text-center">Average Turbidity</Card.Title>
-                      <Card.Text className="display-4 text-center">{dashboardData.avg_turbidity ? dashboardData.avg_turbidity.toFixed(2) : 'N/A'}</Card.Text>
-                      {error.dashboard && <small className="text-warning mt-2">* {error.dashboard}</small>}
-                    </Card.Body>
-                  </Card>
-                </motion.div>
-              </Col>
+                </Col>
             </>
-          ) : (
-            <Col className="text-center py-5">
-              <p>No dashboard data available</p>
-            </Col>
           )}
-        </Row>
+              </Row>
 
-        {/* Recent Data */}
+          {/* Recent Data */}
         <Row className="mb-4">
           <Col>
             <motion.div variants={itemVariants}>
               <Card className={`${theme === 'dark' ? 'bg-dark text-light border-secondary' : ''}`}>
                 <Card.Header className="d-flex justify-content-between align-items-center">
-                  <h5 className="mb-0">Recent Readings</h5>
+                  <div className="d-flex align-items-center">
+                    <i className="bi bi-clock-history me-2" style={{ fontSize: '1.2rem' }}></i>
+                    <h5 className="mb-0">Recent Readings</h5>
+                  </div>
                   <Button variant="primary" size="sm" onClick={() => navigate('/DataTable')}>
-                    View All Data
+                    <i className="bi bi-table me-1"></i> View All Data
                   </Button>
                 </Card.Header>
                 <Card.Body>
@@ -405,16 +483,16 @@ function HomePage() {
                     <>
                       <div className="table-responsive">
                         <table className={`table ${theme === 'dark' ? 'table-dark' : 'table-light'}`}>
-                          <thead>
-                            <tr>
+                  <thead>
+                    <tr>
                               <th onClick={() => handleSort('location')} style={{ cursor: 'pointer' }}>Location</th>
                               <th onClick={() => handleSort('ph_value')} style={{ cursor: 'pointer' }}>pH Value</th>
                               <th onClick={() => handleSort('temperature')} style={{ cursor: 'pointer' }}>Temperature (°C)</th>
                               <th onClick={() => handleSort('turbidity')} style={{ cursor: 'pointer' }}>Turbidity (NTU)</th>
                               <th onClick={() => handleSort('timestamp')} style={{ cursor: 'pointer' }}>Timestamp</th>
-                            </tr>
-                          </thead>
-                          <tbody>
+                    </tr>
+                  </thead>
+                  <tbody>
                             {recentData.slice(0, 5).map((item, index) => (
                               <tr key={index} className={isNewRecord(item) ? 'new-record-row' : ''}>
                                 <td>{item.location}</td>
@@ -427,18 +505,18 @@ function HomePage() {
                                     <Badge bg="success" className="ms-2">NEW</Badge>
                                   )}
                                 </td>
-                              </tr>
-                            ))}
-                          </tbody>
+                      </tr>
+                    ))}
+                  </tbody>
                         </table>
                       </div>
                       {error.recent && (
                         <div className="text-warning text-center mt-2">
                           <small>* {error.recent}</small>
-                        </div>
+                </div>
                       )}
-                    </>
-                  ) : (
+              </>
+            ) : (
                     <p className="text-center">No recent data available</p>
                   )}
                 </Card.Body>
@@ -453,7 +531,10 @@ function HomePage() {
             <motion.div variants={itemVariants}>
               <Card className={`${theme === 'dark' ? 'bg-dark text-light border-secondary' : ''}`}>
                 <Card.Header className="d-flex justify-content-between align-items-center">
-                  <h5 className="mb-0">pH vs Temperature Correlation</h5>
+                  <div className="d-flex align-items-center">
+                    <i className="bi bi-graph-up me-2" style={{ fontSize: '1.2rem' }}></i>
+                    <h5 className="mb-0">pH vs Temperature Correlation</h5>
+                  </div>
                   <div className="d-flex align-items-center">
                     <select
                       className={`form-select form-select-sm me-2 ${theme === 'dark' ? 'bg-dark text-light border-secondary' : ''}`}
@@ -466,7 +547,7 @@ function HomePage() {
                       ))}
                     </select>
                     <Button variant="primary" size="sm" onClick={applyLocationChange}>
-                      Apply
+                      <i className="bi bi-arrow-repeat me-1"></i> Apply
                     </Button>
                   </div>
                 </Card.Header>
@@ -493,7 +574,7 @@ function HomePage() {
                       {error.correlation && (
                         <div className="text-warning text-center mt-2">
                           <small>* {error.correlation}</small>
-                        </div>
+          </div>
                       )}
                     </>
                   ) : (
@@ -504,7 +585,8 @@ function HomePage() {
                 </Card.Body>
                 <Card.Footer className="text-muted">
                   <small>
-                    Showing correlation for location: {selectedLocation}
+                    <i className="bi bi-info-circle me-1"></i>
+                    Showing correlation for location: <strong>{selectedLocation}</strong>
                   </small>
                 </Card.Footer>
               </Card>
@@ -517,7 +599,8 @@ function HomePage() {
           <Col>
             <motion.div variants={itemVariants}>
               <Card className={`${theme === 'dark' ? 'bg-dark text-light border-secondary' : ''}`}>
-                <Card.Header>
+                <Card.Header className="d-flex align-items-center">
+                  <i className="bi bi-link-45deg me-2" style={{ fontSize: '1.2rem' }}></i>
                   <h5 className="mb-0">Quick Links</h5>
                 </Card.Header>
                 <Card.Body>
@@ -572,7 +655,7 @@ function HomePage() {
             </motion.div>
           </Col>
         </Row>
-      </motion.div>
+    </motion.div>
     </Container>
   );
 }

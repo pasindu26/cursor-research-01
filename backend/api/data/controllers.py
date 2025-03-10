@@ -242,9 +242,43 @@ def get_dashboard_stats():
         conn = get_db_connection()
         cursor = conn.cursor(MySQLdb.cursors.DictCursor)
         
-        # Get total count
-        cursor.execute("SELECT COUNT(*) as total FROM sensor_data")
-        total = cursor.fetchone()['total']
+        # Get total readings in the last 24 hours
+        cursor.execute("""
+            SELECT COUNT(*) as total_readings_24h
+            FROM sensor_data
+            WHERE created_at >= NOW() - INTERVAL 24 HOUR
+        """)
+        total_readings = cursor.fetchone()['total_readings_24h']
+        
+        # Get highest pH value in the last 24 hours
+        cursor.execute("""
+            SELECT ph_value as value, location, CONCAT(date, ' ', time) as timestamp
+            FROM sensor_data
+            WHERE created_at >= NOW() - INTERVAL 24 HOUR
+            ORDER BY ph_value DESC
+            LIMIT 1
+        """)
+        highest_ph = cursor.fetchone()
+        
+        # Get highest temperature in the last 24 hours
+        cursor.execute("""
+            SELECT temperature as value, location, CONCAT(date, ' ', time) as timestamp
+            FROM sensor_data
+            WHERE created_at >= NOW() - INTERVAL 24 HOUR
+            ORDER BY temperature DESC
+            LIMIT 1
+        """)
+        highest_temp = cursor.fetchone()
+        
+        # Get highest turbidity in the last 24 hours
+        cursor.execute("""
+            SELECT turbidity as value, location, CONCAT(date, ' ', time) as timestamp
+            FROM sensor_data
+            WHERE created_at >= NOW() - INTERVAL 24 HOUR
+            ORDER BY turbidity DESC
+            LIMIT 1
+        """)
+        highest_turbidity = cursor.fetchone()
         
         # Get average values
         cursor.execute("""
@@ -253,44 +287,47 @@ def get_dashboard_stats():
                 AVG(temperature) as avg_temp,
                 AVG(turbidity) as avg_turbidity
             FROM sensor_data
+            WHERE created_at >= NOW() - INTERVAL 24 HOUR
         """)
         averages = cursor.fetchone()
-        
-        # Get location distribution
-        cursor.execute("""
-            SELECT location, COUNT(*) as count
-            FROM sensor_data
-            GROUP BY location
-            ORDER BY count DESC
-        """)
-        locations = cursor.fetchall()
-        
-        # Get recent readings
-        cursor.execute("""
-            SELECT *
-            FROM sensor_data
-            ORDER BY created_at DESC
-            LIMIT 5
-        """)
-        recent = cursor.fetchall()
         
         cursor.close()
         conn.close()
         
+        # Format the response
+        formatted_highest_ph = {
+            'value': float(highest_ph['value']) if highest_ph else 0,
+            'location': highest_ph['location'] if highest_ph else '',
+            'timestamp': highest_ph['timestamp'] if highest_ph else ''
+        } if highest_ph else None
+        
+        formatted_highest_temp = {
+            'value': float(highest_temp['value']) if highest_temp else 0,
+            'location': highest_temp['location'] if highest_temp else '',
+            'timestamp': highest_temp['timestamp'] if highest_temp else ''
+        } if highest_temp else None
+        
+        formatted_highest_turbidity = {
+            'value': float(highest_turbidity['value']) if highest_turbidity else 0,
+            'location': highest_turbidity['location'] if highest_turbidity else '',
+            'timestamp': highest_turbidity['timestamp'] if highest_turbidity else ''
+        } if highest_turbidity else None
+        
         return jsonify({
             'status': 'success',
-            'data': {
-                'total_readings': total,
-                'averages': averages,
-                'locations': locations,
-                'recent_readings': recent
-            }
+            'total_readings_24h': total_readings,
+            'highest_ph': formatted_highest_ph,
+            'highest_temp': formatted_highest_temp,
+            'highest_turbidity': formatted_highest_turbidity,
+            'avg_ph': float(averages['avg_ph']) if averages['avg_ph'] else 0,
+            'avg_temp': float(averages['avg_temp']) if averages['avg_temp'] else 0,
+            'avg_turbidity': float(averages['avg_turbidity']) if averages['avg_turbidity'] else 0
         }), 200
         
     except Exception as e:
         return jsonify({
             'status': 'error',
-            'message': str(e)
+            'message': f'Failed to fetch dashboard stats: {str(e)}'
         }), 500
 
 @data_bp.route('/all-data', methods=['GET'])
@@ -401,35 +438,51 @@ def get_all_data():
 @data_bp.route('/compare-graph-data', methods=['GET'])
 @jwt_required()
 def compare_graph_data():
-    """Get comparative graph data for multiple locations."""
+    """Get comparison graph data for multiple locations, date range, and data type."""
     try:
         # Get query parameters
         start_date = request.args.get('startDate')
         end_date = request.args.get('endDate')
-        locations = request.args.get('locations')  # Get locations as a comma-separated string
-        data_type = request.args.get('dataType')  # Get dataType (e.g., ph_value or temperature)
+        locations = request.args.get('locations')
+        data_type = request.args.get('dataType')  # Get dataType from the query parameters
+        
+        # If date is provided instead of date range, use it for both start and end
+        date = request.args.get('date')
+        if date and not start_date and not end_date:
+            start_date = date
+            end_date = date
 
         # Validate inputs
-        if not start_date or not end_date or not locations or not data_type:
-            return jsonify({'error': 'startDate, endDate, locations, and dataType are required'}), 400
+        if not locations:
+            return jsonify({'error': 'locations is required'}), 400
+            
+        if not start_date:
+            # Default to today if not provided
+            start_date = datetime.now().strftime('%Y-%m-%d')
+            
+        if not end_date:
+            # Default to today if not provided
+            end_date = datetime.now().strftime('%Y-%m-%d')
+            
+        if not data_type:
+            # Default to temperature if not provided
+            data_type = 'temperature'
 
-        # Validate data_type to prevent SQL injection
+        # Validate dataType to prevent SQL injection
         if data_type not in ['ph_value', 'temperature', 'turbidity']:
-            return jsonify({'error': 'Invalid dataType. Must be "ph_value", "temperature", or "turbidity"'}), 400
+            return jsonify({'error': 'Invalid dataType. Must be "ph_value" or "temperature" or "turbidity"'}), 400
 
         # Split locations into a list
         location_list = locations.split(',')
 
-        # Execute query
         conn = get_db_connection()
         cursor = conn.cursor(MySQLdb.cursors.DictCursor)
 
         # Query to get daily averages grouped by location and date
-        placeholders = ', '.join(['%s'] * len(location_list))
         query = f"""
             SELECT location, date, AVG({data_type}) AS value
             FROM sensor_data
-            WHERE date >= %s AND date <= %s AND location IN ({placeholders})
+            WHERE date >= %s AND date <= %s AND location IN ({','.join(['%s'] * len(location_list))})
             GROUP BY location, date
             ORDER BY date, location
         """
@@ -443,16 +496,274 @@ def compare_graph_data():
         data = {}
         for row in rows:
             location = row['location']
-            date_str = row['date'].strftime('%Y-%m-%d') if hasattr(row['date'], 'strftime') else str(row['date'])
-            value = float(row['value']) if row['value'] is not None else 0
+            date = row['date']
+            value = float(row['value'])
             
             if location not in data:
                 data[location] = []
-            
-            data[location].append({'date': date_str, 'value': value})
+                
+            data[location].append({
+                'date': date,
+                'value': value
+            })
 
-        return jsonify(data), 200
+        return jsonify({
+            'status': 'success',
+            'data': data
+        }), 200
+        
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500 
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to fetch comparison graph data: {str(e)}'
+        }), 500
+
+@data_bp.route('/recent-data', methods=['GET'])
+@jwt_required()
+def get_recent_data():
+    """Get recent sensor data (last 5 records)."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Get recent entries (last 5)
+        cursor.execute("""
+            SELECT id, location, ph_value, temperature, turbidity, date, time, created_at
+            FROM sensor_data
+            ORDER BY created_at DESC
+            LIMIT 5
+        """)
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        # Format the data
+        data = []
+        for row in rows:
+            data.append({
+                'id': row['id'],
+                'location': row['location'],
+                'ph_value': row['ph_value'],
+                'temperature': row['temperature'],
+                'turbidity': row['turbidity'],
+                'date': row['date'],
+                'time': row['time'],
+                'created_at': row['created_at'].strftime('%Y-%m-%d %H:%M:%S') if row['created_at'] else None
+            })
+
+        return jsonify({
+            'status': 'success',
+            'data': data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to fetch recent data: {str(e)}'
+        }), 500
+
+@data_bp.route('/correlation-data', methods=['GET'])
+@jwt_required()
+def get_correlation_data():
+    """Get correlation data for a specific location."""
+    try:
+        # Get location from query parameters
+        location = request.args.get('location', 'US')  # Default location is 'US'
+        
+        conn = get_db_connection()
+        cursor = conn.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Calculate last 24 hours based on the server's timezone
+        now = datetime.now()
+        last_24h = now - timedelta(hours=24)
+        last_24h_str = last_24h.strftime('%Y-%m-%d %H:%M:%S')
+
+        # Query database for the last 24 hours and the specified location
+        query = """
+            SELECT temperature, turbidity, ph_value
+            FROM sensor_data
+            WHERE CONCAT(date, ' ', time) >= %s AND LOWER(location) = LOWER(%s)
+        """
+        cursor.execute(query, (last_24h_str, location))
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        # Structure the data into arrays
+        temperature_values = []
+        turbidity_values = []
+        ph_values = []
+        
+        for row in rows:
+            temperature_values.append(row['temperature'])
+            turbidity_values.append(row['turbidity'])
+            ph_values.append(row['ph_value'])
+
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'temperature_values': temperature_values,
+                'turbidity_values': turbidity_values,
+                'ph_values': ph_values
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to fetch correlation data: {str(e)}'
+        }), 500
+
+@data_bp.route('/last-24-hours', methods=['GET'])
+@jwt_required()
+def get_last_24_hours_data():
+    """Get data from the last 24 hours."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Get data from the last 24 hours
+        cursor.execute("""
+            SELECT *
+            FROM sensor_data
+            WHERE created_at >= NOW() - INTERVAL 24 HOUR
+            ORDER BY created_at DESC
+        """)
+        
+        data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'status': 'success',
+            'data': data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to fetch last 24 hours data: {str(e)}'
+        }), 500
+
+@data_bp.route('/highest-values', methods=['GET'])
+@jwt_required()
+def get_highest_values():
+    """Get highest values for pH, temperature, and turbidity."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Get highest pH value
+        cursor.execute("""
+            SELECT ph_value as value, location, CONCAT(date, ' ', time) as timestamp
+            FROM sensor_data
+            ORDER BY ph_value DESC
+            LIMIT 1
+        """)
+        highest_ph = cursor.fetchone()
+        
+        # Get highest temperature
+        cursor.execute("""
+            SELECT temperature as value, location, CONCAT(date, ' ', time) as timestamp
+            FROM sensor_data
+            ORDER BY temperature DESC
+            LIMIT 1
+        """)
+        highest_temp = cursor.fetchone()
+        
+        # Get highest turbidity
+        cursor.execute("""
+            SELECT turbidity as value, location, CONCAT(date, ' ', time) as timestamp
+            FROM sensor_data
+            ORDER BY turbidity DESC
+            LIMIT 1
+        """)
+        highest_turbidity = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'status': 'success',
+            'highest_ph': highest_ph,
+            'highest_temp': highest_temp,
+            'highest_turbidity': highest_turbidity
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to fetch highest values: {str(e)}'
+        }), 500
+
+@data_bp.route('/graph-data', methods=['GET'])
+@jwt_required()
+def get_graph_data():
+    """Get graph data for a specific location, date range, and data type."""
+    try:
+        # Get query parameters
+        start_date = request.args.get('startDate')
+        end_date = request.args.get('endDate')
+        location = request.args.get('location')
+        data_type = request.args.get('dataType')  # Get dataType from the query parameters
+        
+        # If date is provided instead of date range, use it for both start and end
+        date = request.args.get('date')
+        if date and not start_date and not end_date:
+            start_date = date
+            end_date = date
+
+        # Validate inputs
+        if not location:
+            return jsonify({'error': 'location is required'}), 400
+            
+        if not start_date:
+            # Default to today if not provided
+            start_date = datetime.now().strftime('%Y-%m-%d')
+            
+        if not end_date:
+            # Default to today if not provided
+            end_date = datetime.now().strftime('%Y-%m-%d')
+            
+        if not data_type:
+            # Default to temperature if not provided
+            data_type = 'temperature'
+
+        # Validate dataType to prevent SQL injection
+        if data_type not in ['ph_value', 'temperature', 'turbidity']:
+            return jsonify({'error': 'Invalid dataType. Must be "ph_value" or "temperature" or "turbidity"'}), 400
+
+        conn = get_db_connection()
+        cursor = conn.cursor(MySQLdb.cursors.DictCursor)
+
+        # Dynamically use the selected dataType column in the query
+        query = f"""
+            SELECT date, time, {data_type} AS value
+            FROM sensor_data
+            WHERE date >= %s AND date <= %s AND location = %s
+            ORDER BY date, time
+        """
+        cursor.execute(query, (start_date, end_date, location))
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        # Convert data to JSON format
+        data = []
+        for row in rows:
+            data.append({
+                'date': row['date'],
+                'time': row['time'],
+                'value': float(row['value'])
+            })
+
+        return jsonify({
+            'status': 'success',
+            'data': data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to fetch graph data: {str(e)}'
+        }), 500 

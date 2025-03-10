@@ -7,32 +7,34 @@ from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import mysql
 from models import User
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 api = Blueprint('api', __name__)
 
 def token_required(f):
     @wraps(f)
+    @jwt_required()
     def decorated(*args, **kwargs):
-        token = None
-        # JWT is passed in the request header
-        if 'Authorization' in request.headers:
-            auth_header = request.headers['Authorization']
-            if auth_header.startswith('Bearer '):
-                token = auth_header[7:]  # Remove 'Bearer ' prefix
-            else:
-                token = auth_header
-        if not token:
-            return jsonify({'message': 'Token is missing!'}), 401
         try:
-            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-            user_id = data['user_id']
+            # Get current user identity from JWT
+            user_id = get_jwt_identity()
+            
+            # Convert user_id to int if it's a string
+            if isinstance(user_id, str):
+                try:
+                    user_id = int(user_id)
+                except ValueError:
+                    return jsonify({'message': 'Invalid user ID in token'}), 401
+            
             # Fetch the user from the database
             cur = mysql.connection.cursor()
             cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
             user_data = cur.fetchone()
             cur.close()
+            
             if not user_data:
                 return jsonify({'message': 'User not found'}), 401
+                
             current_user = User(
                 id=user_data[0],
                 firstname=user_data[1],
@@ -42,11 +44,10 @@ def token_required(f):
                 email=user_data[5],
                 user_type=user_data[6]
             )
-        except jwt.ExpiredSignatureError:
-            return jsonify({'message': 'Token has expired!'}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({'message': 'Token is invalid!'}), 401
-        return f(current_user, *args, **kwargs)
+            
+            return f(current_user, *args, **kwargs)
+        except Exception as e:
+            return jsonify({'message': f'Authentication failed: {str(e)}'}), 401
     return decorated
 
 # Add preflight request handler for all routes
@@ -280,16 +281,17 @@ def correlation_data(current_user):
 '''
 
 @api.route('/correlation-data', methods=['GET'])
-@token_required
-def correlation_data(current_user):
-    from app import mysql  # Import here to avoid circular import
-    from datetime import datetime, timedelta
-
-    location = request.args.get('location', 'US')  # Default location is 'US'
-
+@jwt_required()
+def correlation_data_route():
     try:
+        # Get user ID from JWT token
+        user_id = get_jwt_identity()
+        
+        # Get location from query parameters
+        location = request.args.get('location', 'US')  # Default location is 'US'
+        
+        # Now fetch the correlation data
         cur = mysql.connection.cursor()
-
         # Calculate last 24 hours based on the server's timezone
         now = datetime.now()
         last_24h = now - timedelta(hours=24)
@@ -306,49 +308,75 @@ def correlation_data(current_user):
         cur.close()
 
         # Structure the data into arrays
-        data = {'temperature': [], 'turbidity': [], 'ph_value': []}
+        temperature_values = []
+        turbidity_values = []
+        ph_values = []
+        
         for row in rows:
-            data['temperature'].append(row[0])
-            data['turbidity'].append(row[1])
-            data['ph_value'].append(row[2])
+            temperature_values.append(row[0])
+            turbidity_values.append(row[1])
+            ph_values.append(row[2])
 
-        return jsonify(data), 200
-
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'temperature_values': temperature_values,
+                'turbidity_values': turbidity_values,
+                'ph_values': ph_values
+            }
+        }), 200
+        
     except Exception as e:
         app.logger.error(f"Error retrieving correlation data: {e}", exc_info=True)
-        return jsonify({'error': 'Internal Server Error'}), 500
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to fetch correlation data: {str(e)}'
+        }), 500
 
 # for Homepage.js
 @api.route('/recent-data', methods=['GET'])
-@token_required
-def recent_data(current_user):
-    from app import mysql  # Import here to avoid circular import
-    from datetime import datetime, timedelta
-
+@jwt_required()
+def recent_data_route():
     try:
+        # Get user ID from JWT token
+        user_id = get_jwt_identity()
+        
+        # Now fetch the recent data
         cur = mysql.connection.cursor()
-        # Get average entries for the last 24 hours
-        now = datetime.now()
-        last_24h = now - timedelta(hours=24)
-        last_24h_str = last_24h.strftime('%Y-%m-%d %H:%M:%S')
-
+        # Get recent entries (last 5)
         cur.execute("""
-            SELECT location, AVG(ph_value) AS ph_value, AVG(temperature) AS temperature, AVG(turbidity) AS turbidity, date, time
+            SELECT id, location, ph_value, temperature, turbidity, date, time, created_at
             FROM sensor_data
-            WHERE CONCAT(date, ' ', time) >= %s
-            GROUP BY location, date, time
-            ORDER BY date DESC, time DESC
-        """, (last_24h_str,))
+            ORDER BY created_at DESC
+            LIMIT 5
+        """)
         rows = cur.fetchall()
         cur.close()
 
-        columns = ['location', 'ph_value', 'temperature', 'turbidity', 'date', 'time']
-        data = [dict(zip(columns, row)) for row in rows]
+        data = []
+        for row in rows:
+            data.append({
+                'id': row['id'],
+                'location': row['location'],
+                'ph_value': row['ph_value'],
+                'temperature': row['temperature'],
+                'turbidity': row['turbidity'],
+                'date': row['date'],
+                'time': row['time'],
+                'created_at': row['created_at'].strftime('%Y-%m-%d %H:%M:%S') if row['created_at'] else None
+            })
 
-        return jsonify(data), 200
+        return jsonify({
+            'status': 'success',
+            'data': data
+        }), 200
+        
     except Exception as e:
         app.logger.error(f"Error retrieving recent data: {e}", exc_info=True)
-        return jsonify({'error': 'Internal Server Error'}), 500
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to fetch recent data: {str(e)}'
+        }), 500
 
 
 #-------------------------------------
@@ -720,4 +748,185 @@ def data_old():
     except Exception as e:
         app.logger.error(f"Error in /data-old: {e}", exc_info=True)
         return jsonify({'error': 'Internal Server Error'}), 500
+
+# Dashboard stats
+@api.route('/api/data/dashboard/stats', methods=['GET'])
+@token_required
+def dashboard_stats(current_user):
+    from app import mysql  # Import here to avoid circular import
+    
+    try:
+        cur = mysql.connection.cursor()
+        
+        # Get total readings in the last 24 hours
+        cur.execute("""
+            SELECT COUNT(*) as total_readings_24h
+            FROM sensor_data
+            WHERE created_at >= NOW() - INTERVAL 24 HOUR
+        """)
+        total_readings = cur.fetchone()['total_readings_24h']
+        
+        # Get highest pH value in the last 24 hours
+        cur.execute("""
+            SELECT ph_value as value, location, CONCAT(date, ' ', time) as timestamp
+            FROM sensor_data
+            WHERE created_at >= NOW() - INTERVAL 24 HOUR
+            ORDER BY ph_value DESC
+            LIMIT 1
+        """)
+        highest_ph = cur.fetchone()
+        
+        # Get highest temperature in the last 24 hours
+        cur.execute("""
+            SELECT temperature as value, location, CONCAT(date, ' ', time) as timestamp
+            FROM sensor_data
+            WHERE created_at >= NOW() - INTERVAL 24 HOUR
+            ORDER BY temperature DESC
+            LIMIT 1
+        """)
+        highest_temp = cur.fetchone()
+        
+        # Get highest turbidity in the last 24 hours
+        cur.execute("""
+            SELECT turbidity as value, location, CONCAT(date, ' ', time) as timestamp
+            FROM sensor_data
+            WHERE created_at >= NOW() - INTERVAL 24 HOUR
+            ORDER BY turbidity DESC
+            LIMIT 1
+        """)
+        highest_turbidity = cur.fetchone()
+        
+        # Get average values
+        cur.execute("""
+            SELECT 
+                AVG(ph_value) as avg_ph,
+                AVG(temperature) as avg_temp,
+                AVG(turbidity) as avg_turbidity
+            FROM sensor_data
+            WHERE created_at >= NOW() - INTERVAL 24 HOUR
+        """)
+        averages = cur.fetchone()
+        
+        cur.close()
+        
+        # Format the response
+        formatted_highest_ph = {
+            'value': float(highest_ph['value']) if highest_ph else 0,
+            'location': highest_ph['location'] if highest_ph else '',
+            'timestamp': highest_ph['timestamp'] if highest_ph else ''
+        } if highest_ph else None
+        
+        formatted_highest_temp = {
+            'value': float(highest_temp['value']) if highest_temp else 0,
+            'location': highest_temp['location'] if highest_temp else '',
+            'timestamp': highest_temp['timestamp'] if highest_temp else ''
+        } if highest_temp else None
+        
+        formatted_highest_turbidity = {
+            'value': float(highest_turbidity['value']) if highest_turbidity else 0,
+            'location': highest_turbidity['location'] if highest_turbidity else '',
+            'timestamp': highest_turbidity['timestamp'] if highest_turbidity else ''
+        } if highest_turbidity else None
+        
+        return jsonify({
+            'status': 'success',
+            'total_readings_24h': total_readings,
+            'highest_ph': formatted_highest_ph,
+            'highest_temp': formatted_highest_temp,
+            'highest_turbidity': formatted_highest_turbidity,
+            'avg_ph': float(averages['avg_ph']) if averages['avg_ph'] else 0,
+            'avg_temp': float(averages['avg_temp']) if averages['avg_temp'] else 0,
+            'avg_turbidity': float(averages['avg_turbidity']) if averages['avg_turbidity'] else 0
+        }), 200
+        
+    except Exception as e:
+        app.logger.error(f"Error retrieving dashboard stats: {e}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to fetch dashboard stats: {str(e)}'
+        }), 500
+
+# Last 24 hours data
+@api.route('/api/data/last-24-hours', methods=['GET'])
+@token_required
+def last_24_hours_data(current_user):
+    from app import mysql  # Import here to avoid circular import
+    
+    try:
+        cur = mysql.connection.cursor()
+        
+        # Get data from the last 24 hours
+        cur.execute("""
+            SELECT *
+            FROM sensor_data
+            WHERE created_at >= NOW() - INTERVAL 24 HOUR
+            ORDER BY created_at DESC
+        """)
+        
+        data = cur.fetchall()
+        cur.close()
+        
+        return jsonify({
+            'status': 'success',
+            'data': data
+        }), 200
+        
+    except Exception as e:
+        app.logger.error(f"Error retrieving last 24 hours data: {e}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to fetch last 24 hours data: {str(e)}'
+        }), 500
+
+# Highest values
+@api.route('/api/data/highest-values', methods=['GET'])
+@token_required
+def highest_values(current_user):
+    from app import mysql  # Import here to avoid circular import
+    
+    try:
+        cur = mysql.connection.cursor()
+        
+        # Get highest pH value
+        cur.execute("""
+            SELECT ph_value as value, location, CONCAT(date, ' ', time) as timestamp
+            FROM sensor_data
+            ORDER BY ph_value DESC
+            LIMIT 1
+        """)
+        highest_ph = cur.fetchone()
+        
+        # Get highest temperature
+        cur.execute("""
+            SELECT temperature as value, location, CONCAT(date, ' ', time) as timestamp
+            FROM sensor_data
+            ORDER BY temperature DESC
+            LIMIT 1
+        """)
+        highest_temp = cur.fetchone()
+        
+        # Get highest turbidity
+        cur.execute("""
+            SELECT turbidity as value, location, CONCAT(date, ' ', time) as timestamp
+            FROM sensor_data
+            ORDER BY turbidity DESC
+            LIMIT 1
+        """)
+        highest_turbidity = cur.fetchone()
+        
+        cur.close()
+        
+        return jsonify({
+            'status': 'success',
+            'highest_ph': highest_ph,
+            'highest_temp': highest_temp,
+            'highest_turbidity': highest_turbidity
+        }), 200
+        
+    except Exception as e:
+        app.logger.error(f"Error retrieving highest values: {e}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to fetch highest values: {str(e)}'
+        }), 500
 

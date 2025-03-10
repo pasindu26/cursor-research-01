@@ -97,18 +97,20 @@ const apiService = {
     getData: (params) => api.get('/api/data/sensor-data', { params }),
     getSummaryInsights: () => api.get('/api/data/dashboard/stats'),
     getWarnings: () => api.get('/api/data/warnings'),
-    getRecentData: () => api.get('/recent-data'),
-    getCorrelationData: (location = 'US') => api.get(`/correlation-data?location=${location}`),
+    getRecentData: () => api.get('/api/data/recent-data'),
+    getCorrelationData: (location = 'US') => api.get(`/api/data/correlation-data?location=${location}`),
     getAllData: () => api.get('/api/data/all-data'),
     getSensorData: (params) => api.get('/api/data/sensor-data', { params }),
     createSensorData: (data) => api.post('/api/data/sensor-data', data),
     updateSensorData: (id, data) => api.put(`/api/data/sensor-data/${id}`, data),
     deleteSensorData: (id) => api.delete(`/api/data/sensor-data/${id}`),
+    getLast24HoursData: () => api.get('/api/data/last-24-hours'),
+    getHighestValues: () => api.get('/api/data/highest-values'),
   },
   
   // Graph endpoints that match the backend routes
   graphs: {
-    getGraphData: (params) => api.get('/graph-data', { params }),
+    getGraphData: (params) => api.get('/api/data/graph-data', { params }),
     getCompareGraphData: (params) => api.get('/api/data/compare-graph-data', { params }),
   },
   
