@@ -493,13 +493,13 @@ function AdminPage() {
 
   const renderTableRows = () => {
     if (currentItems.length === 0) {
-      return (
+  return (
         <tr>
           <td colSpan="8" className="text-center py-4">
-            {isLoading ? (
+      {isLoading ? (
               <div className="d-flex justify-content-center">
-                <Spinner animation="border" variant="primary" />
-              </div>
+          <Spinner animation="border" variant="primary" />
+        </div>
             ) : (
               <div className="text-muted">
                 <i className="bi bi-inbox fs-4 d-block mb-2"></i>
@@ -507,7 +507,7 @@ function AdminPage() {
               </div>
             )}
           </td>
-        </tr>
+              </tr>
       );
     }
 
@@ -561,26 +561,26 @@ function AdminPage() {
         </td>
         <td>
           <div className="btn-action-group">
-            <Button
+                    <Button
               variant={theme === 'dark' ? 'outline-light' : 'outline-dark'}
-              size="sm"
+                      size="sm"
               onClick={() => handleEdit(item)}
               className="me-2"
               title="Edit Record"
-            >
+                    >
               <i className="bi bi-pencil-square"></i>
-            </Button>
-            <Button
+                    </Button>
+                    <Button
               variant="outline-danger"
-              size="sm"
+                      size="sm"
               onClick={() => confirmDelete(item.id)}
               title="Delete Record"
-            >
+                    >
               <i className="bi bi-trash"></i>
-            </Button>
+                    </Button>
           </div>
-        </td>
-      </tr>
+                  </td>
+                </tr>
     ));
   };
 

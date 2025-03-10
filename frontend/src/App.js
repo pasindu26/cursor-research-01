@@ -83,9 +83,10 @@ const ProtectedRoute = ({ requireAdmin, children }) => {
 
 function App() {
     const { auth } = useContext(AuthContext);
-    const location = useLocation();
-    const [authLoading, setAuthLoading] = useState(true);
     const { theme } = useContext(ThemeContext);
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [authLoading, setAuthLoading] = useState(true);
 
     useEffect(() => {
         // Simulating a short delay to ensure auth state is loaded
@@ -113,109 +114,111 @@ function App() {
             <AppNavbar />
 
             {/* Main Content */}
-            <div className="main-content container mt-4">
-                <Routes>
-                    {/* Auth Routes */}
-                    <Route
-                        path="/login"
-                        element={
-                            auth.loggedIn ? (
-                                <Navigate to={auth.user?.user_type === 'admin' ? '/admin' : '/'} replace />
-                            ) : (
-                                <LoginPage />
-                            )
-                        }
-                    />
-                    <Route
-                        path="/signup"
-                        element={auth.loggedIn ? <Navigate to="/" replace /> : <SignupPage />}
-                    />
-                    
-                    {/* Protected Routes */}
-                    <Route
-                        path="/admin"
-                        element={
-                            <ProtectedRoute requireAdmin={true}>
-                                <AdminPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/"
-                        element={
-                            auth.loggedIn ? (
-                                <HomePage />
-                            ) : (
-                                <Navigate to="/login" state={{ from: location }} replace />
-                            )
-                        }
-                    />
-                    <Route
-                        path="/graphs"
-                        element={
-                            auth.loggedIn ? (
-                                <GraphPage />
-                            ) : (
-                                <Navigate to="/login" state={{ from: location }} replace />
-                            )
-                        }
-                    />
-                    <Route
-                        path="/compare-graphs"
-                        element={
-                            auth.loggedIn ? (
-                                <CompareGraphPage />
-                            ) : (
-                                <Navigate to="/login" state={{ from: location }} replace />
-                            )
-                        }
-                    />
-                    <Route
-                        path="/DataTable"
-                        element={
-                            auth.loggedIn ? (
-                                <DataTable />
-                            ) : (
-                                <Navigate to="/login" state={{ from: location }} replace />
-                            )
-                        }
-                    />
-                    
-                    {/* Public Routes */}
-                    <Route
-                        path="/pricing"
-                        element={
-                            auth.loggedIn ? (
-                                <Navigate to="/" replace />
-                            ) : (
-                                <Pricing />
-                            )
-                        }
-                    />
-                    <Route
-                        path="/faqs"
-                        element={
-                            auth.loggedIn ? (
-                                <Navigate to="/" replace />
-                            ) : (
-                                <FAQs />
-                            )
-                        }
-                    />
-                    <Route
-                        path="/about"
-                        element={
-                            auth.loggedIn ? (
-                                <Navigate to="/" replace />
-                            ) : (
-                                <About />
-                            )
-                        }
-                    />
-                    
-                    {/* Fallback Route */}
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
+            <div className="main-content-wrapper">
+                <div className="main-content container mt-4">
+                    <Routes>
+                        {/* Auth Routes */}
+                        <Route
+                            path="/login"
+                            element={
+                                auth.loggedIn ? (
+                                    <Navigate to={auth.user?.user_type === 'admin' ? '/admin' : '/'} replace />
+                                ) : (
+                                    <LoginPage />
+                                )
+                            }
+                        />
+                        <Route
+                            path="/signup"
+                            element={auth.loggedIn ? <Navigate to="/" replace /> : <SignupPage />}
+                        />
+                        
+                        {/* Protected Routes */}
+                        <Route
+                            path="/admin"
+                            element={
+                                <ProtectedRoute requireAdmin={true}>
+                                    <AdminPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/"
+                            element={
+                                auth.loggedIn ? (
+                                    <HomePage />
+                                ) : (
+                                    <Navigate to="/login" state={{ from: location }} replace />
+                                )
+                            }
+                        />
+                        <Route
+                            path="/graphs"
+                            element={
+                                auth.loggedIn ? (
+                                    <GraphPage />
+                                ) : (
+                                    <Navigate to="/login" state={{ from: location }} replace />
+                                )
+                            }
+                        />
+                        <Route
+                            path="/compare-graphs"
+                            element={
+                                auth.loggedIn ? (
+                                    <CompareGraphPage />
+                                ) : (
+                                    <Navigate to="/login" state={{ from: location }} replace />
+                                )
+                            }
+                        />
+                        <Route
+                            path="/DataTable"
+                            element={
+                                auth.loggedIn ? (
+                                    <DataTable />
+                                ) : (
+                                    <Navigate to="/login" state={{ from: location }} replace />
+                                )
+                            }
+                        />
+                        
+                        {/* Public Routes */}
+                        <Route
+                            path="/pricing"
+                            element={
+                                auth.loggedIn ? (
+                                    <Navigate to="/" replace />
+                                ) : (
+                                    <Pricing />
+                                )
+                            }
+                        />
+                        <Route
+                            path="/faqs"
+                            element={
+                                auth.loggedIn ? (
+                                    <Navigate to="/" replace />
+                                ) : (
+                                    <FAQs />
+                                )
+                            }
+                        />
+                        <Route
+                            path="/about"
+                            element={
+                                auth.loggedIn ? (
+                                    <Navigate to="/" replace />
+                                ) : (
+                                    <About />
+                                )
+                            }
+                        />
+                        
+                        {/* Fallback Route */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                </div>
             </div>
 
             {/* Footer */}
