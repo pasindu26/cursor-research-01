@@ -12,6 +12,49 @@
   text-overflow: ellipsis;
 }
 
+/* Timestamp column styling */
+.timestamp-cell {
+  min-width: 180px;
+  width: 180px;
+}
+
+.timestamp-cell .time-part {
+  white-space: nowrap;
+}
+
+/* Adjust column widths */
+.table-fixed th:nth-child(1), /* ID */
+.table-fixed td:nth-child(1) {
+  width: 60px;
+}
+
+.table-fixed th:nth-child(2), /* Location */
+.table-fixed td:nth-child(2) {
+  width: 120px;
+}
+
+.table-fixed th:nth-child(3), /* pH Value */
+.table-fixed td:nth-child(3),
+.table-fixed th:nth-child(4), /* Temperature */
+.table-fixed td:nth-child(4),
+.table-fixed th:nth-child(5), /* Turbidity */
+.table-fixed td:nth-child(5) {
+  width: 100px;
+}
+
+.table-fixed th:nth-child(7), /* Actions */
+.table-fixed td:nth-child(7) {
+  width: 100px;
+}
+
+/* Ensure table headers are properly styled */
+.table-fixed th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.05rem;
+}
+
 /* Button Spacing */
 .btn-action-group {
   display: flex;
@@ -61,22 +104,38 @@
     width: 100%;
     margin-right: 0;
   }
+
+  .table-fixed {
+    table-layout: auto;
+  }
+  
+  .table-fixed th,
+  .table-fixed td {
+    white-space: normal;
+  }
+  
+  .timestamp-cell {
+    min-width: auto;
+    width: auto;
+  }
 }
 
-.admin-page-container {
+.admin-dashboard {
   padding: 1.5rem;
   min-height: calc(100vh - 200px);
 }
 
-.admin-page-container.dark {
+.admin-dashboard.dark {
   background-color: #212529;
   color: #f8f9fa;
 }
 
+/* Card Styling */
 .filter-card {
   margin-bottom: 1.5rem;
   border: none;
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border-radius: 0.5rem;
 }
 
 .dark .filter-card {
@@ -122,13 +181,56 @@
 }
 
 /* Table styles */
-.table th {
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.8rem;
-  letter-spacing: 0.05rem;
+.table-responsive {
+  border-radius: 0.5rem;
+  overflow: hidden;
 }
 
+.new-record-row {
+  animation: highlight-new-row 2s ease-in-out;
+}
+
+@keyframes highlight-new-row {
+  0% {
+    background-color: rgba(40, 167, 69, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Dark mode table */
+.dark .table-dark {
+  background-color: #343a40;
+}
+
+.dark .table-dark th {
+  background-color: #212529;
+  border-color: #454d55;
+}
+
+/* Search input styling */
+.search-input-wrapper {
+  position: relative;
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+}
+
+.dark .search-clear-btn {
+  color: #adb5bd;
+}
+
+/* Modal styling */
 .dark-modal .modal-content {
   background-color: #343a40;
   color: #f8f9fa;
@@ -136,6 +238,86 @@
 
 .dark-modal .close {
   color: #f8f9fa;
+}
+
+/* Pagination info */
+.pagination-info {
+  padding: 0.5rem 0;
+}
+
+/* Form styling */
+.dark .form-control:focus,
+.dark .form-select:focus {
+  background-color: #212529;
+  color: #f8f9fa;
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Badge styling */
+.badge {
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+}
+
+/* Animation for alerts */
+.alert {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .card-value {
+    font-size: 1.5rem;
+  }
+  
+  .stat-card i {
+    font-size: 1.5rem !important;
+  }
+
+  .timestamp-cell {
+    min-width: 160px;
+    width: 160px;
+  }
+  
+  .table-fixed th:nth-child(1),
+  .table-fixed td:nth-child(1) {
+    width: 50px;
+  }
+  
+  .table-fixed th:nth-child(2),
+  .table-fixed td:nth-child(2) {
+    width: 100px;
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-dashboard {
+    padding: 1rem;
+  }
+  
+  h2 {
+    font-size: 1.75rem;
+  }
+  
+  .card-title {
+    font-size: 0.875rem;
+  }
+  
+  .card-value {
+    font-size: 1.25rem;
+  }
 }
 
 /* Status badges */
@@ -201,14 +383,14 @@
 
 /* Tablet and up */
 @media (min-width: 768px) {
-  .admin-page-container {
+  .admin-dashboard {
     padding: 2rem;
   }
 }
 
 /* Desktop and up */
 @media (min-width: 992px) {
-  .admin-page-container {
+  .admin-dashboard {
     padding: 2.5rem;
   }
 }
@@ -248,4 +430,92 @@
   100% {
     opacity: 1;
   }
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+  backdrop-filter: blur(3px);
+}
+
+.loading-content {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  text-align: center;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.dark .loading-content {
+  background-color: #343a40;
+  color: #f8f9fa;
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+.loading-content .spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Date Picker Styling */
+.dark input[type="date"] {
+  color-scheme: dark;
+  background-color: #212529;
+  border-color: rgba(255, 255, 255, 0.125);
+  color: #f8f9fa;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.dark input[type="date"]:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.dark input[type="date"]:disabled {
+  background-color: #343a40;
+  opacity: 0.65;
+}
+
+/* Form styling */
+.dark .form-control,
+.dark .form-select {
+  background-color: #212529;
+  border-color: rgba(255, 255, 255, 0.125);
+  color: #f8f9fa;
+}
+
+.dark .form-control:focus,
+.dark .form-select:focus {
+  background-color: #212529;
+  color: #f8f9fa;
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.dark .form-control::placeholder {
+  color: #6c757d;
+}
+
+.dark .form-control:disabled,
+.dark .form-select:disabled {
+  background-color: #343a40;
+  opacity: 0.65;
 }

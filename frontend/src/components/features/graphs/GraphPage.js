@@ -186,7 +186,7 @@ function GraphPage() {
           yAxisID: selectedDataType === 'all' ? 'y2' : 'y',
         });
       }
-      
+
       setChartData({
         labels,
         datasets
@@ -232,12 +232,12 @@ function GraphPage() {
   // Memoize chart options
   const chartOptions = useMemo(() => {
     const options = {
-      responsive: true,
+                responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
+                plugins: {
+                  legend: {
+                    display: true,
+                    position: 'top',
           labels: { 
             color: theme === 'dark' ? '#FFF' : '#000',
             padding: 20,
@@ -284,11 +284,11 @@ function GraphPage() {
             weight: 'bold'
           }
         }
-      },
-      scales: {
-        x: {
-          title: { 
-            display: true, 
+                },
+                scales: {
+                  x: {
+                    title: {
+                      display: true,
             text: 'Time', 
             color: theme === 'dark' ? '#FFF' : '#000',
             font: {
@@ -297,26 +297,26 @@ function GraphPage() {
             }
           },
           ticks: { 
-            color: theme === 'dark' ? '#FFF' : '#000',
+                      color: theme === 'dark' ? '#FFF' : '#000',
             maxRotation: 45,
             minRotation: 45
-          },
+                    },
           grid: { color: theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' },
-        },
-        y: {
+                  },
+                  y: {
           type: 'linear',
           display: true,
           position: 'left',
-          title: {
-            display: true,
+                    title: {
+                      display: true,
             text: selectedDataType === 'all' ? 'pH Value' : getYAxisLabel(selectedDataType),
-            color: theme === 'dark' ? '#FFF' : '#000',
+                      color: theme === 'dark' ? '#FFF' : '#000',
             font: {
               size: 14,
               weight: 'bold'
             }
-          },
-          ticks: { color: theme === 'dark' ? '#FFF' : '#000' },
+                    },
+                    ticks: { color: theme === 'dark' ? '#FFF' : '#000' },
           grid: { color: theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' },
         },
       },
@@ -558,7 +558,7 @@ function GraphPage() {
                           Only dates with available data are selectable
                         </small>
                       )}
-                    </div>
+          </div>
                   )}
                 </Form.Group>
               </Col>
@@ -628,8 +628,8 @@ function GraphPage() {
                           </p>
                         </>
                       )}
-                    </div>
-                  )}
+        </div>
+      )}
                 </div>
               </Col>
             </Row>
