@@ -106,6 +106,7 @@ const apiService = {
     deleteSensorData: (id) => api.delete(`/api/data/sensor-data/${id}`),
     getLast24HoursData: () => api.get('/api/data/last-24-hours'),
     getHighestValues: () => api.get('/api/data/highest-values'),
+    getAvailableDates: (location) => api.get(`/api/data/available-dates?location=${location}`),
   },
   
   // Graph endpoints that match the backend routes

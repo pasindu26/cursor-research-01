@@ -438,51 +438,35 @@ def get_all_data():
 @data_bp.route('/compare-graph-data', methods=['GET'])
 @jwt_required()
 def compare_graph_data():
-    """Get comparison graph data for multiple locations, date range, and data type."""
+    """Get comparative graph data for multiple locations."""
     try:
         # Get query parameters
         start_date = request.args.get('startDate')
         end_date = request.args.get('endDate')
-        locations = request.args.get('locations')
-        data_type = request.args.get('dataType')  # Get dataType from the query parameters
-        
-        # If date is provided instead of date range, use it for both start and end
-        date = request.args.get('date')
-        if date and not start_date and not end_date:
-            start_date = date
-            end_date = date
+        locations = request.args.get('locations')  # Get locations as a comma-separated string
+        data_type = request.args.get('dataType')  # Get dataType (e.g., ph_value or temperature)
 
         # Validate inputs
-        if not locations:
-            return jsonify({'error': 'locations is required'}), 400
-            
-        if not start_date:
-            # Default to today if not provided
-            start_date = datetime.now().strftime('%Y-%m-%d')
-            
-        if not end_date:
-            # Default to today if not provided
-            end_date = datetime.now().strftime('%Y-%m-%d')
-            
-        if not data_type:
-            # Default to temperature if not provided
-            data_type = 'temperature'
+        if not start_date or not end_date or not locations or not data_type:
+            return jsonify({'error': 'startDate, endDate, locations, and dataType are required'}), 400
 
-        # Validate dataType to prevent SQL injection
+        # Validate data_type to prevent SQL injection
         if data_type not in ['ph_value', 'temperature', 'turbidity']:
-            return jsonify({'error': 'Invalid dataType. Must be "ph_value" or "temperature" or "turbidity"'}), 400
+            return jsonify({'error': 'Invalid dataType. Must be "ph_value", "temperature", or "turbidity"'}), 400
 
         # Split locations into a list
         location_list = locations.split(',')
 
+        # Execute query
         conn = get_db_connection()
         cursor = conn.cursor(MySQLdb.cursors.DictCursor)
 
         # Query to get daily averages grouped by location and date
+        placeholders = ', '.join(['%s'] * len(location_list))
         query = f"""
             SELECT location, date, AVG({data_type}) AS value
             FROM sensor_data
-            WHERE date >= %s AND date <= %s AND location IN ({','.join(['%s'] * len(location_list))})
+            WHERE date >= %s AND date <= %s AND location IN ({placeholders})
             GROUP BY location, date
             ORDER BY date, location
         """
@@ -496,27 +480,19 @@ def compare_graph_data():
         data = {}
         for row in rows:
             location = row['location']
-            date = row['date']
-            value = float(row['value'])
+            date_str = row['date'].strftime('%Y-%m-%d') if hasattr(row['date'], 'strftime') else str(row['date'])
+            value = float(row['value']) if row['value'] is not None else 0
             
             if location not in data:
                 data[location] = []
-                
-            data[location].append({
-                'date': date,
-                'value': value
-            })
+            
+            data[location].append({'date': date_str, 'value': value})
 
-        return jsonify({
-            'status': 'success',
-            'data': data
-        }), 200
-        
+        return jsonify(data), 200
     except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'Failed to fetch comparison graph data: {str(e)}'
-        }), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 @data_bp.route('/recent-data', methods=['GET'])
 @jwt_required()
@@ -699,71 +675,113 @@ def get_highest_values():
 @data_bp.route('/graph-data', methods=['GET'])
 @jwt_required()
 def get_graph_data():
-    """Get graph data for a specific location, date range, and data type."""
+    """Get graph data for a specific date and location."""
     try:
         # Get query parameters
-        start_date = request.args.get('startDate')
-        end_date = request.args.get('endDate')
-        location = request.args.get('location')
-        data_type = request.args.get('dataType')  # Get dataType from the query parameters
-        
-        # If date is provided instead of date range, use it for both start and end
         date = request.args.get('date')
-        if date and not start_date and not end_date:
-            start_date = date
-            end_date = date
-
+        location = request.args.get('location')
+        
         # Validate inputs
-        if not location:
-            return jsonify({'error': 'location is required'}), 400
+        if not date or not location:
+            return jsonify({
+                'status': 'error',
+                'message': 'Date and location are required parameters'
+            }), 400
             
-        if not start_date:
-            # Default to today if not provided
-            start_date = datetime.now().strftime('%Y-%m-%d')
-            
-        if not end_date:
-            # Default to today if not provided
-            end_date = datetime.now().strftime('%Y-%m-%d')
-            
-        if not data_type:
-            # Default to temperature if not provided
-            data_type = 'temperature'
-
-        # Validate dataType to prevent SQL injection
-        if data_type not in ['ph_value', 'temperature', 'turbidity']:
-            return jsonify({'error': 'Invalid dataType. Must be "ph_value" or "temperature" or "turbidity"'}), 400
-
         conn = get_db_connection()
         cursor = conn.cursor(MySQLdb.cursors.DictCursor)
-
-        # Dynamically use the selected dataType column in the query
-        query = f"""
-            SELECT date, time, {data_type} AS value
+        
+        # Query to get data for the specified date and location
+        query = """
+            SELECT time, ph_value, temperature, turbidity
             FROM sensor_data
-            WHERE date >= %s AND date <= %s AND location = %s
-            ORDER BY date, time
+            WHERE date = %s AND location = %s
+            ORDER BY time
         """
-        cursor.execute(query, (start_date, end_date, location))
+        cursor.execute(query, (date, location))
         rows = cursor.fetchall()
         cursor.close()
         conn.close()
-
-        # Convert data to JSON format
-        data = []
+        
+        if not rows:
+            return jsonify({
+                'status': 'error',
+                'message': 'No data found for the specified date and location'
+            }), 404
+            
+        # Extract data for the chart
+        times = []
+        ph_values = []
+        temperature_values = []
+        turbidity_values = []
+        
         for row in rows:
-            data.append({
-                'date': row['date'],
-                'time': row['time'],
-                'value': float(row['value'])
-            })
-
+            times.append(row['time'])
+            ph_values.append(float(row['ph_value']))
+            temperature_values.append(float(row['temperature']))
+            turbidity_values.append(float(row['turbidity']))
+            
         return jsonify({
             'status': 'success',
-            'data': data
+            'timestamps': times,
+            'ph_values': ph_values,
+            'temperature_values': temperature_values,
+            'turbidity_values': turbidity_values
         }), 200
         
     except Exception as e:
         return jsonify({
             'status': 'error',
             'message': f'Failed to fetch graph data: {str(e)}'
+        }), 500
+
+@data_bp.route('/available-dates', methods=['GET'])
+@jwt_required()
+def get_available_dates():
+    """Get available dates for a specific location."""
+    try:
+        # Get location from query parameters
+        location = request.args.get('location')
+        
+        # Validate inputs
+        if not location:
+            return jsonify({
+                'status': 'error',
+                'message': 'Location is a required parameter'
+            }), 400
+            
+        conn = get_db_connection()
+        cursor = conn.cursor(MySQLdb.cursors.DictCursor)
+        
+        # Query to get available dates for the specified location
+        query = """
+            SELECT DISTINCT date
+            FROM sensor_data
+            WHERE location = %s
+            ORDER BY date DESC
+            LIMIT 30
+        """
+        cursor.execute(query, (location,))
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        if not rows:
+            return jsonify({
+                'status': 'error',
+                'message': 'No data found for the specified location'
+            }), 404
+            
+        # Extract dates
+        dates = [row['date'].strftime('%Y-%m-%d') if hasattr(row['date'], 'strftime') else row['date'] for row in rows]
+            
+        return jsonify({
+            'status': 'success',
+            'dates': dates
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to fetch available dates: {str(e)}'
         }), 500 
