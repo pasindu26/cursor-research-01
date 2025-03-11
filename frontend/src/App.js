@@ -20,6 +20,7 @@ import About from './components/pages/About';
 
 // Import styles
 import './styles/main.css';
+import './styles/dark-theme.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 // Define a ProtectedRoute component for admin access

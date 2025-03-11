@@ -21,9 +21,13 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('theme', theme);
     // Remove any existing theme classes first
-    document.body.classList.remove('bg-dark', 'bg-light');
+    document.body.classList.remove('bg-dark', 'bg-light', 'dark-mode');
     // Add the new theme class
-    document.body.classList.add(theme === 'dark' ? 'bg-dark' : 'bg-light');
+    if (theme === 'dark') {
+      document.body.classList.add('bg-dark', 'dark-mode');
+    } else {
+      document.body.classList.add('bg-light');
+    }
   }, [theme]);
 
   return (

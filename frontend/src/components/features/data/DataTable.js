@@ -628,7 +628,7 @@ function DataTable() {
                         <i className="bi bi-calendar-date me-2"></i>
                         Filter by Date
                       </Form.Label>
-                      <div className="custom-calendar-container">
+                      <div className="custom-calendar-container position-relative">
                         <InputGroup>
                           <Form.Control
                             type="text"
@@ -651,7 +651,7 @@ function DataTable() {
                               <i className="bi bi-x"></i>
                             </Button>
                           )}
-              </InputGroup>
+                        </InputGroup>
                         
                         {availableDates.length > 0 && (
                           <small className="text-muted d-block mt-1">
@@ -660,8 +660,8 @@ function DataTable() {
                           </small>
                         )}
                       </div>
-            </Form.Group>
-          </Col>
+                    </Form.Group>
+                  </Col>
                   <Col lg={3} md={6} className="mb-3 mb-lg-0">
                     <Form.Group>
                       <Form.Label>
@@ -1084,7 +1084,14 @@ function DataTable() {
         <div 
           ref={calendarRef} 
           className={`custom-calendar ${theme === 'dark' ? 'dark-theme' : ''}`}
-          style={{ position: 'fixed', zIndex: 1050 }}
+          style={{ 
+            position: 'absolute',
+            zIndex: 1050,
+            top: 'calc(100% + 5px)',
+            left: '0',
+            boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)',
+            width: '280px'
+          }}
         >
           <div className="calendar-header">
             <button 
@@ -1165,25 +1172,37 @@ function DataTable() {
           border: 1px solid #ced4da;
           border-radius: 0.375rem;
           box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-          padding: 0.5rem;
+          padding: 0.75rem;
+          margin-top: 5px;
         }
         
         .dark-theme {
           background-color: #343a40;
           border-color: #495057;
           color: #fff;
+          box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.3);
         }
         
         .calendar-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 0.5rem;
+          margin-bottom: 0.75rem;
+          padding-bottom: 0.5rem;
+          border-bottom: 1px solid ${theme === 'dark' ? '#495057' : '#e9ecef'};
         }
         
         .calendar-header button {
           color: ${theme === 'dark' ? '#fff' : '#007bff'};
           padding: 0.25rem 0.5rem;
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          border-radius: 0.25rem;
+        }
+
+        .calendar-header button:hover {
+          background-color: ${theme === 'dark' ? '#495057' : '#e9ecef'};
         }
         
         .dark-theme .calendar-header button {
@@ -1192,12 +1211,13 @@ function DataTable() {
         
         .month-year {
           font-weight: bold;
+          font-size: 0.95rem;
         }
         
         .calendar-days {
           display: grid;
           grid-template-columns: repeat(7, 1fr);
-          gap: 2px;
+          gap: 3px;
         }
         
         .weekday {
@@ -1206,13 +1226,16 @@ function DataTable() {
           font-size: 0.8rem;
           padding: 0.25rem;
           color: ${theme === 'dark' ? '#adb5bd' : '#6c757d'};
+          margin-bottom: 5px;
         }
         
         .day {
           text-align: center;
-          padding: 0.25rem;
+          padding: 0.375rem 0;
           cursor: pointer;
           border-radius: 0.25rem;
+          font-size: 0.85rem;
+          transition: background-color 0.15s ease-in-out;
         }
         
         .day:hover {
@@ -1241,6 +1264,18 @@ function DataTable() {
           color: ${theme === 'dark' ? '#495057' : '#ced4da'};
           cursor: not-allowed;
           background-color: transparent;
+        }
+        
+        /* Responsive calendar adjustments */
+        @media (max-width: 576px) {
+          .custom-calendar {
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: 280px !important;
+            z-index: 1060 !important;
+          }
         }
         
         /* Mobile responsiveness */
