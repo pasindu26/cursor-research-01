@@ -11,4 +11,4 @@ spec:
       port: 80
       targetPort: 80
       nodePort: 30080  # Exposing frontend for external access
-  type: NodePort
+  type: NodePort 

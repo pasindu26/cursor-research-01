@@ -3,8 +3,8 @@ import random
 import datetime
 
 # API endpoints
-LOGIN_URL = "http://3.89.164.169:30050/login"
-CREATE_DATA_URL = "http://3.89.164.169:30050/api/data/sensor-data"
+LOGIN_URL = "http://localhost:5000/login"
+CREATE_DATA_URL = "http://localhost:5000/api/data/sensor-data"
 
 # User credentials
 username = "admin5"
@@ -74,4 +74,4 @@ def main():
         print("Failed to obtain token. Cannot add sample record.")
 
 if __name__ == "__main__":
-    main()
+    main() 

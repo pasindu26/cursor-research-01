@@ -11,4 +11,4 @@ spec:
       port: 5000
       targetPort: 5000
       nodePort: 30050  # Exposing it externally for testing
-  type: NodePort
+  type: NodePort  

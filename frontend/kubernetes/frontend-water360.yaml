@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: jonemark226/frontend-water360:04
+        image: jonemark226/frontend-water360:05
         ports:
         - containerPort: 80
         envFrom:

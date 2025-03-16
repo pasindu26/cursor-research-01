@@ -4,8 +4,8 @@ import time
 import datetime
 
 # API endpoints
-LOGIN_URL = "http://54.242.42.31:5000/login"
-CREATE_DATA_URL = "http://54.242.42.31:5000/api/data/sensor-data"
+LOGIN_URL = "http://3.80.113.124:5000/login"
+CREATE_DATA_URL = "http://3.80.113.124:5000/api/data/sensor-data"
 
 # User credentials
 username = "admin5"
