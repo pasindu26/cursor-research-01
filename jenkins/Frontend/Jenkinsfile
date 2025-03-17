@@ -57,12 +57,8 @@ pipeline {
                 script {
                     def commitHash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
 
-                    // Tag the image as both commit-hash and latest
-                    sh "docker tag ${IMAGE_NAME}:${commitHash} ${IMAGE_NAME}:latest"
-
-                    // Push both tags
+                    // Push only the commit hash tagged image
                     sh "docker push ${IMAGE_NAME}:${commitHash}"
-                    sh "docker push ${IMAGE_NAME}:latest"
                 }
             }
         }
