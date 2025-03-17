@@ -17,6 +17,9 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
+                // Configure Git to trust the workspace directory
+                sh 'git config --global --add safe.directory "${WORKSPACE}"'
+                
                 // Clone the 'main' branch from GitHub
                 git branch: 'main', url: 'https://github.com/pasindu26/cursor-research-01.git'
             }
