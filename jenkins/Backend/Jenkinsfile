@@ -1,0 +1,74 @@
+pipeline {
+    agent {
+        docker {
+            image 'docker:latest'
+            args '--user root:root --privileged -v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
+
+    environment {
+        // Use the Jenkins credentials ID you created for Docker Hub
+        DOCKER_HUB = credentials('docker-hub-credentials') 
+        // Name and repo for your Docker image - adjusted for backend
+        IMAGE_NAME = "jonemark226/backend-water360"
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                // Configure Git to trust the workspace directory
+                sh 'git config --global --add safe.directory "${WORKSPACE}"'
+                
+                // Clone the 'main' branch from GitHub
+                git branch: 'main', url: 'https://github.com/pasindu26/cursor-research-01.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Get the short commit hash for tagging
+                    def commitHash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+
+                    // Build Docker image using the Dockerfile in 'backend' directory
+                    sh """
+                      docker build \
+                      -t ${IMAGE_NAME}:${commitHash} \
+                      -f backend/Dockerfile backend
+                    """
+                }
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                script {
+                    // Use Docker Hub credentials from Jenkins
+                    sh """
+                      echo ${DOCKER_HUB_PSW} | docker login -u ${DOCKER_HUB_USR} --password-stdin
+                    """
+                }
+            }
+        }
+
+        stage('Push Image to Docker Hub') {
+            steps {
+                script {
+                    def commitHash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+
+                    // Push only the commit hash tagged image
+                    sh "docker push ${IMAGE_NAME}:${commitHash}"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Backend Docker Image successfully built and pushed!"
+        }
+        failure {
+            echo "❌ Build failed. Please check logs."
+        }
+    }
+} 
