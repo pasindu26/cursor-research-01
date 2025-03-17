@@ -1,0 +1,76 @@
+pipeline {
+    agent {
+        // Use a Docker-in-Docker image and mount Docker socket
+        docker {
+            image 'docker:latest'
+            args '--privileged -v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
+
+    environment {
+        // Use the Jenkins credentials ID you created for Docker Hub
+        DOCKER_HUB = credentials('docker-hub-credentials') 
+        // Name and repo for your Docker image
+        IMAGE_NAME = "jonemark226/frontend-water360"
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                // Clone the 'main' branch from GitHub
+                git branch: 'main', url: 'https://github.com/pasindu26/cursor-research-01.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Get the short commit hash for tagging
+                    def commitHash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+
+                    // Build Docker image using the Dockerfile in 'frontend' directory
+                    sh """
+                      docker build \
+                      -t ${IMAGE_NAME}:${commitHash} \
+                      -f frontend/Dockerfile frontend
+                    """
+                }
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                script {
+                    // Use Docker Hub credentials from Jenkins
+                    sh """
+                      echo ${DOCKER_HUB_PSW} | docker login -u ${DOCKER_HUB_USR} --password-stdin
+                    """
+                }
+            }
+        }
+
+        stage('Push Image to Docker Hub') {
+            steps {
+                script {
+                    def commitHash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+
+                    // Tag the image as both commit-hash and latest
+                    sh "docker tag ${IMAGE_NAME}:${commitHash} ${IMAGE_NAME}:latest"
+
+                    // Push both tags
+                    sh "docker push ${IMAGE_NAME}:${commitHash}"
+                    sh "docker push ${IMAGE_NAME}:latest"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Docker Image successfully built and pushed!"
+        }
+        failure {
+            echo "❌ Build failed. Please check logs."
+        }
+    }
+}
