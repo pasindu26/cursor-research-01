@@ -4,4 +4,4 @@ metadata:
   name: frontend-config
   namespace: frontend-water360
 data:
-  REACT_APP_BACKEND_URL: "http://3.89.164.169:30050" 
+  REACT_APP_BACKEND_URL: "https://admin.water360.dtk2lab.com:5000"  

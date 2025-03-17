@@ -11,5 +11,5 @@ data:
   DEBUG: "True"
   JWT_SECRET_KEY: "water360-super-secret-key-for-authentication"
   JWT_ACCESS_TOKEN_EXPIRES: "86400"
-  FRONTEND_URL: "http://3.89.164.169:30080"
-  CORS_ORIGIN: "http://3.89.164.169:30080" 
+  FRONTEND_URL: "https://admin.water360.dtk2lab.com"
+  CORS_ORIGIN: "https://admin.water360.dtk2lab.com"  
