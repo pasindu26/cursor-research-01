@@ -4,7 +4,7 @@ import datetime
 
 # API endpoints
 LOGIN_URL = "https://admin.water360.dtk2lab.com:5000/login"
-CREATE_DATA_URL = "https://admin.water360.dtk2lab.com:5000/api/data/sensor-data"
+CREATE_DATA_URL = "https://admin.water360.dtk2lab.com:5000/api/data/sensor-data" 
 
 # User credentials
 username = "admin5"
@@ -36,7 +36,7 @@ def add_sample_record(token):
     ph_value = round(random.uniform(6.5, 8.5), 2)
     temperature = round(random.uniform(18.0, 30.0), 2)
     turbidity = round(random.uniform(5.0, 25.0), 2)
-    location = random.choice(['uk', 'us', 'eu', 'asia', 'africa'])
+    location = random.choice(['nuwara'])
     
     # Current timestamp
     now = datetime.datetime.now()

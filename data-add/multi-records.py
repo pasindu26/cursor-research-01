@@ -4,8 +4,8 @@ import time
 import datetime
 
 # API endpoints
-LOGIN_URL = "http://3.80.113.124:5000/login"
-CREATE_DATA_URL = "http://3.80.113.124:5000/api/data/sensor-data"
+LOGIN_URL = "https://admin.water360.dtk2lab.com:5000/login"
+CREATE_DATA_URL = "https://admin.water360.dtk2lab.com:5000/api/data/sensor-data"
 
 # User credentials
 username = "admin5"
@@ -40,7 +40,7 @@ def add_multiple_records(token, hours=24):
     turbidity_range = (5.0, 25.0)
     
     # Locations
-    locations = ['uk', 'us', 'eu', 'asia', 'africa']
+    locations = ['nuwara_wewa', 'thisa_wewa', 'kala_wewa']
     
     # Current time
     now = datetime.datetime.now()
